@@ -1,49 +1,43 @@
-# ☁️ AWS High-Availability & Secure 3-Tier Infrastructure
+# ☁️ AWS High-Availability & Secure Network Infrastructure
 
-This repository contains a robust, production-ready AWS infrastructure designed with **High Availability (HA)** and **Layered Security** principles. The architecture follows the 3-tier networking model to ensure isolation and fault tolerance.
+This repository demonstrates a foundational AWS infrastructure designed for **High Availability (HA)** and **Network Isolation**. The project focuses on setting up a secure environment with segmented subnets, load balancing, and private instance management.
 
 ## 🏗️ Solution Architecture
 
 ![Architecture Diagram](./aws_uygulama1.png)
 
-### Key Architectural Highlights:
-* **VPC Design:** A custom VPC with a /16 CIDR block, segmented into 6 subnets (2 Public, 2 Private, 2 Data).
-* **Multi-AZ Deployment:** Spanned across two Availability Zones (`eu-central-1a` and `eu-central-1b`) to ensure the system remains operational if one zone fails.
-* **Tiered Segmentation:**
-    1.  **Web Tier:** Public-facing Application Load Balancer.
-    2.  **Application Tier:** EC2 Web Servers isolated in Private Subnets.
-    3.  **Data Tier:** Dedicated subnets for RDS (Relational Database Service) with no direct internet access.
+### Architectural Components:
+* **Custom VPC:** A dedicated network environment with a /16 CIDR block.
+* **Multi-AZ Readiness:** Subnets are spanned across two Availability Zones (`eu-central-1a` and `eu-central-1b`) to ensure fault tolerance.
+* **Network Segmentation:**
+    1.  **Public Subnets:** Hosting the Application Load Balancer, NAT Gateways, and VPN Gateway.
+    2.  **Private Subnets:** Reserved for application servers (EC2) with no direct public access.
+    3.  **Data Subnets (Pre-configured):** Isolated subnets ready for future database (RDS) deployments.
 
-## 🛠️ Tech Stack & AWS Services
+## 🛠️ Implemented Services & Features
 
-| Service | Role |
+| Service | Implementation Details |
 | :--- | :--- |
-| **VPC & Subnets** | Logical network isolation and traffic routing. |
-| **Application LB** | Distributes incoming HTTP/HTTPS traffic and performs health checks. |
-| **NAT Gateway** | Allows private instances to access the internet for updates/patches securely. |
-| **Amazon EC2** | Ubuntu-based web servers running Nginx. |
-| **Pritunl (VPN)** | Management gateway for secure SSH and Database access. |
-| **Amazon RDS** | High-availability database layer with automated failover. |
+| **Application LB** | Configured to distribute traffic to instances in the private subnet while performing health checks. |
+| **NAT Gateway** | Deployed in public subnets to allow private EC2 instances to fetch updates/patches from the internet. |
+| **VPN Gateway (Pritunl)** | Set up in the public subnet to provide a secure tunnel for administrative SSH access to private instances. |
+| **Route Tables** | Custom routing configured: Public -> Internet Gateway (IGW), Private -> NAT Gateway. |
 
-## 🚀 Security Implementation
+## 🚀 Security Strategy
 
-### 1. Network Isolation (Private Subnets)
-All application and database servers are hosted in **Private Subnets**. They have no Public IP addresses and are completely unreachable from the public internet. External traffic is only permitted via the **Application Load Balancer**.
+### 1. Inbound Traffic Control
+External users can only access the web services via the **Application Load Balancer**. Direct access to the internal servers (EC2) is blocked at the network level.
 
-### 2. Secure Management (VPN Access)
-Instead of using a vulnerable Bastion Host, this architecture utilizes **Pritunl VPN**. Administrators connect via an encrypted tunnel to perform maintenance, SSH into private instances, or manage the database using private IP addresses.
+### 2. Management & SSH Access
+There is no "Bastion Host" or public SSH port open. Administrative tasks are performed by connecting to the **Pritunl VPN**, allowing secure access to the internal IP range of the VPC.
 
-### 3. Security Groups (Least Privilege)
-Access is restricted using granular Security Group rules:
-* **ALB SG:** Allows inbound traffic on Port 80/443 from `0.0.0.0/0`.
-* **Web Server SG:** Only allows inbound traffic from the **ALB Security Group**.
-* **Database SG:** Only allows inbound SQL traffic (3306/5432) from the **Web Server Security Group**.
+### 3. Outbound Security
+Instances in the private subnet can access the internet (via NAT Gateway) for necessary outgoing traffic, but they remain unreachable from any unsolicited incoming connections.
 
-## 📈 Future Enhancements
-- [ ] **Infrastructure as Code (IaC):** Automate the entire stack using Terraform.
-- [ ] **Auto Scaling Groups (ASG):** Implement dynamic horizontal scaling based on CPU/Traffic metrics.
-- [ ] **S3 & CloudFront:** Offload static assets to S3 and distribute via CDN for lower latency.
-- [ ] **Route 53:** Global DNS management and health-check based routing.
+## 📈 Next Steps (Roadmap)
+- [ ] **Database Integration:** Deploy a Multi-AZ RDS instance within the pre-allocated Data Subnets.
+- [ ] **S3 & CloudFront:** Offload static assets to S3 and use CloudFront CDN for global caching.
+- [ ] **Infrastructure as Code:** Migrate this manual setup into **Terraform** for automated deployment.
 
 ---
 *Developed as a part of the LimonCloud Academy training program.*
